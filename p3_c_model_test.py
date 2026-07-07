@@ -3,8 +3,8 @@ from tokenizers import Tokenizer
 
 import p3_b_train_weights
 # ── config ────────────────────────────────────────────────────────
-MODEL_PATH     = r"Models Dev/Rosa/checkpoints/rosa_step215000.pt"
-TOKENIZER_PATH = r"Models Dev/Rosa/rosa_tokenizer.json"
+MODEL_PATH     = r"Models Dev/RosaB/Rosa_finetuned.pt"
+TOKENIZER_PATH = r"Models Dev/RosaB/rosa_tokenizer.json"
 CONTEXT_LEN    = 1024
 VOCAB_SIZE     = 32000
 MAX_NEW_TOKENS = 200
@@ -40,13 +40,18 @@ def test_model():
     device    = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     tokenizer = Tokenizer.from_file(TOKENIZER_PATH)
 
-    model = p3_b_train_weights.Rosa().to(device)
+    model = p3_b_train_weights.NewbornModel().to(device)
     ckpt = torch.load(MODEL_PATH, map_location=device)
-    model.load_state_dict(ckpt["model"])
+    try:
+        model.load_state_dict(ckpt["model"])
+    except:
+        model.load_state_dict(ckpt)
     #model.load_state_dict(torch.load(MODEL_PATH, map_location=device))
 
     while True:
-        prompt = input("\nPrompt: ")
+        input_usuario = input("\nPrompt: ")
+        prompt = f"<bos>[usuario]: {input_usuario}<mask>"
+        #prompt = input_usuario
         if prompt.lower() == "exit":
             break
         output = generate(model, tokenizer, prompt, MAX_NEW_TOKENS, TEMPERATURE, TOP_K, device)

@@ -6,9 +6,10 @@ from tokenizers.decoders import ByteLevel as ByteLevelDecoder
 from datasets import load_from_disk
 
 SPECIAL_TOKENS = [
-    "<pad>", "<unk>", "<bos>", "<eos>", "<mask>",
+    "<pad>", "<unk>", "<bos>", "<eos>", "<mask>", "<sep>", "<user>", "<rosa>", "<orden>", "<pregunta>", "<pregunta imposible>", "<libre>"
 ]
-
+#   |                           BASICOS NECESARIOS        |     Entidades     |                     Clasificacion                        |
+#Agregar: Emociones permanentes, emociones de corta duracion, acciones del vroid (aparece, escondete, sorda, escucha, etc), acciones del sistema (apagate, esconde la ventana, etc)
 GUARANTEED_TOKENS = [
     # especiales del proyecto
     "💜", "🌹", "💎",
@@ -48,7 +49,7 @@ def batch_iterator(dataset_es, dataset_en, batch_size=1000):
     for i in range(0, len(dataset_en), batch_size):
         yield dataset_en[i:i+batch_size]["text"]
 
-def train_tokenizer(dataset_es, dataset_en, output_path=r"Models Dev/Rosa/rosa_tokenizer", vocab_size=32000,):
+def train_tokenizer(dataset_es, dataset_en, output_path=r"Models Dev/RosaB/rosa_tokenizer", vocab_size=32000,):
     tokenizer = Tokenizer(BPE(unk_token="<unk>"))
     tokenizer.pre_tokenizer = ByteLevel(add_prefix_space=False)
     tokenizer.decoder = ByteLevelDecoder()
@@ -71,7 +72,7 @@ def train_tokenizer(dataset_es, dataset_en, output_path=r"Models Dev/Rosa/rosa_t
     print(f"Vocabulario final: {tokenizer.get_vocab_size()} tokens")
     return tokenizer
 
-def train_tokenizer_root(root = r"Models Dev/Rosa/", model_name = r"Rosa"):
+def train_tokenizer_root(root = r"Models Dev/RosaB/", model_name = r"Rosa"):
     print("Cargando datasets...")
     wiki_es = load_from_disk(root + r"wiki_es_clean")
     wiki_en = load_from_disk(root + r"wiki_en_clean")

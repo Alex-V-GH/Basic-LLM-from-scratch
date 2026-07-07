@@ -49,5 +49,15 @@ test_model() #maybe integrar a p3_b(?
 """Fase 4 — Fine-tuning conversacional: Dataset conversacional que vamos a construir o conseguir. Acá es donde el modelo aprende el flujo que describiste (clasificar input → rama → responder).
 En esta fase se agrega reconocimiento de los caracteres y palabras básicas de idiomas no entrenados. No necesita saber traducir idiomas que no sean inglés. Sólo poder reconocerlos, como máximo.
  Y sus equivalencias fonéticas aproximadas al español (opcional)"""
+"""input -->decide qué tipo de input es --> si es pregunta --> si la puede manejar --> generación de respuesta
+si no puede manejar la pregunta --> generación de respuesta fragmentada en formato específico para post-procesamiento
+si no es pregunta, pero es orden según directivas específicas -->  generación de respuesta (cumplir la orden, normalmente comunicar algo)
+si no es pregunta ni orden --> generación de respuesta (manejar la situación según parámetros pasados como parte del prompt)
+no quiero que SEPA cosas grandes, sino que tenga una cultura general mínima y razonable, cosas 
+básicas como poder decir "sí, 1 es un número." o "what did you say? está en inglés y significa qué dijiste?",
+ sumado a que pueda adaptarse al usuario con una memoria de contexto, esta sí, quizás extensa. (qué le 
+ gusta al usuario, cómo este trata al agente de IA, qué cosas NO le gustan al usuario, cierto sentido 
+ básico de personalidad/rol, etc)"""
+
 """Fase 5 — Memoria externa: Integración con ChromaDB para la memoria de usuario extensa. (en este punto, plantear las otras posibles db. NO AHORA, sólo al llegar a esta fase."""
 """Fase 6 — Flujo de decisión: El código Python que orquesta todo."""

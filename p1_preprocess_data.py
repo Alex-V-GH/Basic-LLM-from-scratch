@@ -50,7 +50,7 @@ def save_to_file(data, path):                       #guarda el resultado en disc
     return size
 
 
-def preproc_data(root = r"Models Dev/Rosa/"):
+def preproc_data(root = r"Models Dev/RosaB/"):
     #cargamos los datasets
     wiki_es = load_from_disk(root + r"wiki_es")
     wiki_en = load_from_disk(root + r"wiki_en")
@@ -68,8 +68,7 @@ def preproc_data(root = r"Models Dev/Rosa/"):
 
     #parte 1 (ES)
     print("Filtrando español...")
-    es_filtered = filter_a_b(500, wiki_es)
-    #COMPLETAMENTE EXPERIMENTAL!!!
+    es_filtered = filter_c(1024**3 *0.1,filter_a_b(500, wiki_es))
 
     es_size = save_to_file(es_filtered, root + r"wiki_es_clean")
 

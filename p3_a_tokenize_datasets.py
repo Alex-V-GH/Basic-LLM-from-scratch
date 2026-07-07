@@ -11,9 +11,9 @@ DATASETS_VERSIONES = 2  #cantidad de "shuffles" del dataset completo. Esto se ha
                         #inglés y castellano en simultáneo, y que las distintas pasadas no sean sobre el mismo
                         #orden (evita overfitting). Como regla general, DATASETS_VERSIONES = training epochs
 # ─────────────────────────────────────────────────────────────────
-
+#MODIFICAR PARA PODER LLAMAR DESDE 4A
 def build_token_bin(root_dir,model_name):
-    TOKENIZER_PATH = root_dir + r"_tokenizer.json"
+    TOKENIZER_PATH = root_dir + model_name + r"_tokenizer.json"
     WIKI_ES_PATH   = root_dir + r"wiki_es_clean"
     WIKI_EN_PATH   = root_dir + r"wiki_en_clean"
     OUT_BIN        = root_dir + model_name + r"_tokens.bin"
@@ -70,6 +70,6 @@ def build_token_bin(root_dir,model_name):
     print(f"Tamaño disco : {size_gb:.2f} GB")
 
 if __name__ == "__main__":
-    root_dir = r"Models Dev/Rosa/"
+    root_dir = r"Models Dev/Rosab/"
     model_name = r"Rosa"
     build_token_bin(root_dir,model_name)

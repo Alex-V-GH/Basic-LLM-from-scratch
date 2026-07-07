@@ -20,9 +20,9 @@ DROPOUT     = 0.1
 VOCAB_SIZE  = 32000
 
 LR          = 3e-4
-BATCH_SIZE  = 16
+BATCH_SIZE  = 8
 
-TOTAL_TOKENS= 4146018702 # 4,146,018,702    #Poner aca el total arrojado por tokenizador
+TOTAL_TOKENS= 77425724 # 77,425,724    #Poner aca el total arrojado por tokenizador
 #crear contador interno real
 
 n_samples   = TOTAL_TOKENS // CONTEXT_LEN          # chunks sin overlap
@@ -51,13 +51,21 @@ def calc_tiempo(seconds):
     s = int(seconds % 60)
     return f"{h:02d}:{m:02d}:{s:02d}"
 # ─────────────────────────────────────────────────────────────────
-def check_last_checkpoint(checkpoint):
+def check_last_checkpoint_file(checkpoint, model_name):
     last = max(
         (f for f in os.listdir(checkpoint) if f.endswith(".pt")),
         key=lambda f: int(re.search(r'\d+', f).group()),
         default=None
     )
-    return os.path.join(checkpoint, last) if last else None
+    if last:
+        # "Rosa_step5000.pt" → sacar "Rosa_step" del inicio → "5000.pt"
+        # → sacar ".pt" del final → "5000"
+        numero_str = last.removeprefix(f"{model_name}_step").removesuffix(".pt")
+        last_index = int(numero_str)
+    else:
+        last_index = 0
+
+    return os.path.join(checkpoint, last) if last else None, last_index
 # ─────────────────────────────────────────────────────────────────
 
 
@@ -171,24 +179,28 @@ class NewbornModel(nn.Module):
     def count_params(self):
         return sum(p.numel() for p in self.parameters())
 
+from torch.utils.data import Subset
 
 def make_loader(dataset, skip_batches=0):
-    #CORREGIR Y HACER QUE USE SKIP BATCHES!
+    skip_samples = skip_batches * BATCH_SIZE
+    if skip_samples > 0:
+        indices = range(skip_samples, len(dataset))
+        dataset = Subset(dataset, indices)
+
     return DataLoader(
         dataset,
         batch_size=BATCH_SIZE,
-        shuffle=False,
+        shuffle=False,#COMENTAR SI TIRA VALUE:ERROR
         pin_memory=True,
         num_workers=4,
     )
 
 
-def train(save_every, log_every, checkpoint, token_bin, resume_from, log_file, dataload, model_name, last_chkpt_file, last_chkpt_index):
+def train(save_every : int, log_every : int, checkpoint_dir, token_bin, log_file, dataload, model_name, last_chkpt_file, last_chkpt_index):
     last_chkpt_index = last_chkpt_index + save_every
     assert os.path.exists(token_bin), \
         f"No se encontró {token_bin} — corré primero 4a_tokenize_dataset.py"
 
-    os.makedirs(checkpoint, exist_ok=True)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Device: {device}")
 
@@ -204,9 +216,9 @@ def train(save_every, log_every, checkpoint, token_bin, resume_from, log_file, d
     # ── resume ────────────────────────────────────────────────────
     start_step  = 0
 
-    if resume_from and os.path.exists(resume_from):
-        print(f"Retomando desde {resume_from}...")
-        ckpt = torch.load(resume_from, map_location=device)
+    if last_chkpt_file and os.path.exists(last_chkpt_file):
+        print(f"Retomando desde {last_chkpt_file}...")
+        ckpt = torch.load(last_chkpt_file, map_location=device)
         model.load_state_dict(ckpt["model"])
         optimizer.load_state_dict(ckpt["optimizer"])
         scheduler.load_state_dict(ckpt["scheduler"])
@@ -258,7 +270,7 @@ def train(save_every, log_every, checkpoint, token_bin, resume_from, log_file, d
             dataload.append((step, loss.item()))
 
         if step % save_every == 0:
-            path = os.path.join(checkpoint, f"{model_name}_step{step}.pt")
+            path = os.path.join(checkpoint_dir, f"{model_name}_step{step}.pt")
             torch.save({
                 "step":      step,
                 "model":     model.state_dict(),
@@ -271,7 +283,7 @@ def train(save_every, log_every, checkpoint, token_bin, resume_from, log_file, d
             print(f"Checkpoint guardado: {path}")
             last_chkpt_index = last_chkpt_index + save_every
 
-    torch.save(model.state_dict(), r"Models Dev/Rosa/rosa_pretrained.pt")
+    torch.save(model.state_dict(), r"Models Dev/Rosab/"+model_name+"_pretrained.pt")
     print("Preentrenamiento completo.")
 
 
@@ -280,21 +292,19 @@ if __name__ == "__main__":
 
     plot = create_live_loss_plot()
     contador = 0
-    log = "Models Dev/Rosa/3_b_dataloader.txt"
+    log = "Models Dev/Rosab/3_b_dataloader.txt"
     dl = charge_dataloader(log)
 
-    save_every = 5_000
+    save_every = 1_000
     log_every = 10
-    checkpoint = r"Models Dev/Rosa/checkpoints"
-    token_bin = r"Models Dev/Rosa/rosa_tokens.bin"
-    last_chkpt = check_last_checkpoint(checkpoint)
-    resume_from = "Models Dev/Rosa/checkpoints/rosa_step"+str(last_chkpt)+".pt"
+    checkpoint_dir = r"Models Dev/Rosab/checkpoints"
+    os.makedirs(checkpoint_dir, exist_ok=True)
+    token_bin = r"Models Dev/Rosab/rosa_tokens.bin"
+    last_chkpt, last_chkpt_index = check_last_checkpoint_file(checkpoint_dir,model_name)
+    #resume_from = "Models Dev/Rosab/checkpoints/rosa_step"+str(last_chkpt)+".pt"
 
     for step, loss in dl:
-        if contador % 50 == 0:
-            plot.update(2,step, loss)
-        #este contador es para acelerar en numeros altos de steps tomados.
-        contador+=1
+        plot.update(2,step, loss)
     multiprocessing.set_start_method("spawn", force=True)
-    train(save_every, log_every, checkpoint, token_bin, resume_from, log, dl, model_name,resume_from,last_chkpt)
+    train(save_every, log_every, checkpoint_dir, token_bin, log, dl, model_name,last_chkpt,last_chkpt_index)
     plot.close()  # deja el gráfico visible al final

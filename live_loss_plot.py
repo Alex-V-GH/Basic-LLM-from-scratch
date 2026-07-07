@@ -22,8 +22,8 @@ class LiveLossPlot:
         self.fig, self.ax = plt.subplots(figsize=(8, 4))
         self.fig.canvas.manager.set_window_title(title)
 
-        (self.line,) = self.ax.plot([], [], color="#5563DE", linewidth=1.0, label="Actual_loss")
-        (self.line2,) = self.ax.plot([], [], color="#DE6355", linewidth=1.0, label="Saved_loss")
+        (self.line,) = self.ax.plot([], [], color="#5563DE", linewidth=1.0, label="Current Training Loss")
+        (self.line2,) = self.ax.plot([], [], color="#DE6355", linewidth=1.0, label="Previous Training Loss")
         self.ax.set_xlabel("Step")
         self.ax.set_ylabel("Loss")
         self.ax.set_title(title)
