@@ -9,6 +9,7 @@
 #               filter english randomly until it equals 1/2 of the spanish portion size (filter c)
 
 from datasets import load_from_disk
+import os
 
 def filter_a_b(min_length, data = "wiki_en"):
     filtered = data.filter(
@@ -50,37 +51,43 @@ def save_to_file(data, path):                       #guarda el resultado en disc
     return size
 
 
-def preproc_data(root = r"Models Dev/RosaB/"):
-    #cargamos los datasets
-    wiki_es = load_from_disk(root + r"wiki_es")
-    wiki_en = load_from_disk(root + r"wiki_en")
-
-    #chequeamos la info general de c/u
-    """print(wiki_en)
-    print(wiki_en.features)
-    print(wiki_en[0])
-
-    print(".\n.\n.\n.\n.\n.")
-
-    print(wiki_es)
-    print(wiki_es.features)
-    print(wiki_es[0])"""
-
+def preproc_data(es_target_size = None, root = r"Models Dev/RosaB/"):
+    if not os.path.exists(root+r"wiki_es_clean"):
     #parte 1 (ES)
-    print("Filtrando español...")
-    es_filtered = filter_c(1024**3 *0.1,filter_a_b(500, wiki_es))
+        wiki_es = load_from_disk(root + r"wiki_es")
 
-    es_size = save_to_file(es_filtered, root + r"wiki_es_clean")
+        print(wiki_es)
+        print(wiki_es.features)
+        print(wiki_es[0])
 
+        print("Filtrando español...")
+        es_prefiltered = filter_a_b(500, wiki_es)
+
+        if es_target_size:
+            print("Filtrando español por longitud...")
+            es_filtered = filter_c(es_target_size ,es_prefiltered)
+        else:
+            es_filtered = es_prefiltered
+
+        es_size = save_to_file(es_filtered, root + r"wiki_es_clean")
+
+
+    if not os.path.exists(root+r"wiki_es_clean"):
     #parte 2 (EN)
-    print("Filtrando inglés por longitud...")
-    en_filtered = filter_a_b(1500, wiki_en)
-    print("Reduciendo inglés a 1/2 del español...")
-    en_reduced = filter_c(es_size // 2, en_filtered)
-    save_to_file(en_reduced, root + r"wiki_en_clean")
+        wiki_en = load_from_disk(root + r"wiki_en")
+        
+        print(wiki_en)
+        print(wiki_en.features)
+        print(wiki_en[0])
 
-    print("Listo.")
+        print("Filtrando inglés por longitud...")
+        en_filtered = filter_a_b(1500, wiki_en)
+
+        print("Reduciendo inglés a 1/2 del español...")
+        en_reduced = filter_c(es_size // 2, en_filtered)
+
+        save_to_file(en_reduced, root + r"wiki_en_clean")
 
 
 if __name__ == "__main__":
-    preproc_data()
+    preproc_data(es_target_size = None)

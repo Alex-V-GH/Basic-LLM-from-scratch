@@ -22,13 +22,17 @@ VOCAB_SIZE  = 32000
 LR          = 3e-4
 BATCH_SIZE  = 8
 
-TOTAL_TOKENS= 77425724 # 77,425,724    #Poner aca el total arrojado por tokenizador
-#crear contador interno real
+def calc_sum_valiws(total_tokens):
+    global TOTAL_TOKENS
+    global TOTAL_STEPS
+    global STEPS_DIGITS
+    global TIMES
 
-n_samples   = TOTAL_TOKENS // CONTEXT_LEN          # chunks sin overlap
-TOTAL_STEPS = n_samples // BATCH_SIZE
-STEPS_DIGITS = len(str(int(TOTAL_STEPS)))
-TIMES       = []
+    TOTAL_TOKENS = total_tokens
+    n_samples   = TOTAL_TOKENS // CONTEXT_LEN          # chunks sin overlap
+    TOTAL_STEPS = n_samples // BATCH_SIZE
+    STEPS_DIGITS = len(str(int(TOTAL_STEPS)))
+    TIMES       = []
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -196,7 +200,7 @@ def make_loader(dataset, skip_batches=0):
     )
 
 
-def train(save_every : int, log_every : int, checkpoint_dir, token_bin, log_file, dataload, model_name, last_chkpt_file, last_chkpt_index):
+def train(save_every : int, log_every : int, checkpoint_dir, token_bin, log_file, dataload, model_name, last_chkpt_file, last_chkpt_index,plot):
     last_chkpt_index = last_chkpt_index + save_every
     assert os.path.exists(token_bin), \
         f"No se encontró {token_bin} — corré primero 4a_tokenize_dataset.py"
@@ -283,28 +287,43 @@ def train(save_every : int, log_every : int, checkpoint_dir, token_bin, log_file
             print(f"Checkpoint guardado: {path}")
             last_chkpt_index = last_chkpt_index + save_every
 
-    torch.save(model.state_dict(), r"Models Dev/Rosab/"+model_name+"_pretrained.pt")
+    torch.save({"step":      step,
+                "model":     model.state_dict(),
+                "optimizer": optimizer.state_dict(),
+                "scheduler": scheduler.state_dict(),
+                "scaler":    scaler.state_dict(),
+                },root_dir+model_name+"_pretrained.pt")
     print("Preentrenamiento completo.")
 
 
+def train_wrapper(root_dir,model_name,total_tokens = 77425724):
+    if not os.path.exists(root_dir+model_name+"_pretrained.pt"):
+        calc_sum_valiws(total_tokens)
+        log = root_dir + "3_b_dataloader.txt"
+        checkpoint_dir = root_dir + r"checkpoints"
+        token_bin = root_dir + model_name + r"_tokens.bin"
+
+        plot = create_live_loss_plot()
+        dataloader = charge_dataloader(log)
+
+        save_every = 1_000
+        log_every = 10
+        os.makedirs(checkpoint_dir, exist_ok=True)
+        last_chkpt, last_chkpt_index = check_last_checkpoint_file(checkpoint_dir,model_name)
+        #resume_from = "Models Dev/Rosab/checkpoints/rosa_step"+str(last_chkpt)+".pt"
+
+        if input("desea cargar los datos previos al gráfico?\n",
+        "*LLEVA MUCHO TIEMPO CUANDO SON DEMASIADOS DATOS.\n",
+        "*NO RECOMENDADO PARA STEP 80K+\n",
+        "y/n") == "y":
+            for step, loss in dataloader:
+                plot.update(step, loss)
+        
+        multiprocessing.set_start_method("spawn", force=True)
+        train(save_every, log_every, checkpoint_dir, token_bin, log, dataloader, model_name,last_chkpt,last_chkpt_index,plot)
+        plot.close()  # deja el gráfico visible al final
+
 if __name__ == "__main__":
+    root_dir = "Models Dev/Rosab/"
     model_name = "Rosa"
-
-    plot = create_live_loss_plot()
-    contador = 0
-    log = "Models Dev/Rosab/3_b_dataloader.txt"
-    dl = charge_dataloader(log)
-
-    save_every = 1_000
-    log_every = 10
-    checkpoint_dir = r"Models Dev/Rosab/checkpoints"
-    os.makedirs(checkpoint_dir, exist_ok=True)
-    token_bin = r"Models Dev/Rosab/rosa_tokens.bin"
-    last_chkpt, last_chkpt_index = check_last_checkpoint_file(checkpoint_dir,model_name)
-    #resume_from = "Models Dev/Rosab/checkpoints/rosa_step"+str(last_chkpt)+".pt"
-
-    for step, loss in dl:
-        plot.update(2,step, loss)
-    multiprocessing.set_start_method("spawn", force=True)
-    train(save_every, log_every, checkpoint_dir, token_bin, log, dl, model_name,last_chkpt,last_chkpt_index)
-    plot.close()  # deja el gráfico visible al final
+    train_wrapper(root_dir,model_name)

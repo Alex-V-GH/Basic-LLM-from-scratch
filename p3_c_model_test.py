@@ -3,8 +3,6 @@ from tokenizers import Tokenizer
 
 import p3_b_train_weights
 # ── config ────────────────────────────────────────────────────────
-MODEL_PATH     = r"Models Dev/RosaB/Rosa_finetuned.pt"
-TOKENIZER_PATH = r"Models Dev/RosaB/rosa_tokenizer.json"
 CONTEXT_LEN    = 1024
 VOCAB_SIZE     = 32000
 MAX_NEW_TOKENS = 200
@@ -36,17 +34,24 @@ def generate(model, tokenizer, prompt, max_new_tokens, temperature, top_k, devic
     generated = x[0, len(ids):].tolist()
     return tokenizer.decode(generated)
 
-def test_model():
+def test_model(root_dir, model_name,pretrained = None, finetuned = None):
+    tokenizer_path = root_dir + model_name + "_tokenizer.json"
+    if pretrained:
+        model_path = root_dir + model_name + "_pretrained.pt"
+    elif finetuned:
+        model_path = root_dir + model_name + "_finetuned.pt"
+    else:
+        model_path = root_dir + r"checkpoints/" + model_name + "_step" + input("numero de checkpoint?") + ".pt"
+
+
     device    = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    tokenizer = Tokenizer.from_file(TOKENIZER_PATH)
+    tokenizer = Tokenizer.from_file(tokenizer_path)
 
     model = p3_b_train_weights.NewbornModel().to(device)
-    ckpt = torch.load(MODEL_PATH, map_location=device)
-    try:
-        model.load_state_dict(ckpt["model"])
-    except:
-        model.load_state_dict(ckpt)
-    #model.load_state_dict(torch.load(MODEL_PATH, map_location=device))
+    ckpt = torch.load(model_path, map_location=device)
+    
+    model.load_state_dict(ckpt["model"])
+    #model.load_state_dict(torch.load(model_path, map_location=device))
 
     while True:
         input_usuario = input("\nPrompt: ")
@@ -59,4 +64,6 @@ def test_model():
 
 
 if __name__ == "__main__":
-    test_model()
+    root_dir = "Models Dev/Rosab/"
+    model_name = "Rosa"            
+    test_model(root_dir, model_name, pretrained = None, finetuned = None)

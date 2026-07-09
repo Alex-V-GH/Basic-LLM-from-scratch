@@ -4,11 +4,15 @@ from tokenizers.trainers import BpeTrainer
 from tokenizers.pre_tokenizers import ByteLevel
 from tokenizers.decoders import ByteLevel as ByteLevelDecoder
 from datasets import load_from_disk
+import os
 
 SPECIAL_TOKENS = [
-    "<pad>", "<unk>", "<bos>", "<eos>", "<mask>", "<sep>", "<user>", "<rosa>", "<orden>", "<pregunta>", "<pregunta imposible>", "<libre>"
+    "<pad>", "<unk>", "<bos>", "<eos>", "<mask>", "<sep>", "<user>", "<rosa>", 
+#   |                           BASICOS NECESARIOS        |     Entidades     | 
+    "<orden>","<pregunta>", "<pregunta imposible>", "<libre>"
+#                    Clasificacion                          |
 ]
-#   |                           BASICOS NECESARIOS        |     Entidades     |                     Clasificacion                        |
+
 #Agregar: Emociones permanentes, emociones de corta duracion, acciones del vroid (aparece, escondete, sorda, escucha, etc), acciones del sistema (apagate, esconde la ventana, etc)
 GUARANTEED_TOKENS = [
     # especiales del proyecto
@@ -50,6 +54,7 @@ def batch_iterator(dataset_es, dataset_en, batch_size=1000):
         yield dataset_en[i:i+batch_size]["text"]
 
 def train_tokenizer(dataset_es, dataset_en, output_path=r"Models Dev/RosaB/rosa_tokenizer", vocab_size=32000,):
+
     tokenizer = Tokenizer(BPE(unk_token="<unk>"))
     tokenizer.pre_tokenizer = ByteLevel(add_prefix_space=False)
     tokenizer.decoder = ByteLevelDecoder()
@@ -73,16 +78,18 @@ def train_tokenizer(dataset_es, dataset_en, output_path=r"Models Dev/RosaB/rosa_
     return tokenizer
 
 def train_tokenizer_root(root = r"Models Dev/RosaB/", model_name = r"Rosa"):
-    print("Cargando datasets...")
-    wiki_es = load_from_disk(root + r"wiki_es_clean")
-    wiki_en = load_from_disk(root + r"wiki_en_clean")
+    if not os.path.exists(root+model_name+"_tokenizer"):
 
-    print("Entrenando tokenizador...")
-    tokenizer = train_tokenizer(wiki_es, wiki_en,root+model_name+"_tokenizer")
+        print("Cargando datasets...")
+        wiki_es = load_from_disk(root + r"wiki_es_clean")
+        wiki_en = load_from_disk(root + r"wiki_en_clean") 
 
-    test = tokenizer.encode(input("Con qué querés probar el tokenizador? Dame un texto de ejemplo."))
-    print("Test encode:", test.tokens)
-    print("Test decode:", tokenizer.decode(test.ids))
+        print("Entrenando tokenizador...")
+        tokenizer = train_tokenizer(wiki_es, wiki_en,root+model_name+"_tokenizer")
+
+        test = tokenizer.encode(input("Con qué querés probar el tokenizador? Dame un texto de ejemplo."))
+        print("Test encode:", test.tokens)
+        print("Test decode:", tokenizer.decode(test.ids))
 
 
 if __name__ == "__main__":

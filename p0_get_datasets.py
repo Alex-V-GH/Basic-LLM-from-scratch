@@ -1,19 +1,22 @@
 from datasets import load_dataset
 from huggingface_hub import login
+import os
 
 def get_datasets(root_dir):
-    lgin = input("Pegue su token de login de HuggingFace\n")
 
-    login(lgin)#CREDENCIALES DE HUGGINGFACE PARA PODER BAJAR LOS DATASETS
-
+    if not os.path.exists(root_dir + r"/wiki_es") or not os.path.exists(root_dir + r"/wiki_en"):
+        login(input("Pegue su token de login de HuggingFace\n"))
 
     # Wikipedia español
-    ds_es = load_dataset("wikimedia/wikipedia", "20231101.es", split="train")
-    ds_es.save_to_disk(root_dir + r"/wiki_es")
+    
+    if not os.path.exists(root_dir + r"/wiki_es"):
+        ds_es = load_dataset("wikimedia/wikipedia", "20231101.es", split="train")
+        ds_es.save_to_disk(root_dir + r"/wiki_es")
 
     # Wikipedia inglés
-    ds_en = load_dataset("wikimedia/wikipedia", "20231101.en", split="train")
-    ds_en.save_to_disk(root_dir + r"/wiki_en")
+    if not os.path.exists(root_dir + r"/wiki_en"):
+        ds_en = load_dataset("wikimedia/wikipedia", "20231101.en", split="train")
+        ds_en.save_to_disk(root_dir + r"/wiki_en")
 
 
 if __name__=="__main__":
