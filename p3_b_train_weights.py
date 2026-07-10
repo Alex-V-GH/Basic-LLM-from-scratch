@@ -312,10 +312,7 @@ def train_wrapper(root_dir,model_name,total_tokens = 77425724):
         last_chkpt, last_chkpt_index = check_last_checkpoint_file(checkpoint_dir,model_name)
         #resume_from = "Models Dev/Rosab/checkpoints/rosa_step"+str(last_chkpt)+".pt"
 
-        if input("desea cargar los datos previos al gráfico?\n",
-        "*LLEVA MUCHO TIEMPO CUANDO SON DEMASIADOS DATOS.\n",
-        "*NO RECOMENDADO PARA STEP 80K+\n",
-        "y/n") == "y":
+        if input("desea cargar los datos previos al gráfico?\n*LLEVA MUCHO TIEMPO CUANDO SON DEMASIADOS DATOS.\n*NO RECOMENDADO PARA STEP 80K+\ny/n") == "y":
             for step, loss in dataloader:
                 plot.update(step, loss)
         

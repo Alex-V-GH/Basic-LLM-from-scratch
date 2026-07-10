@@ -79,7 +79,7 @@ tokenizar_dataset(root_dir, model_name)
 #result: root_dir + r"Finetuning_tokens.bin"
 
 titulo("Fase 4 C: Finetunning.")
-finetune(root_dir, model_name, 25, 10)#AGREGAR GRAFICO DESPUES!!!
+finetune(root_dir, model_name, 25, 10)#AGREGAR GRAFICO DESPUES!!! // Reemplazar por el metodo p3_b_train_weights.
 #result: root_dir + model_name + "_finetuned.pt"
 
 titulo("Fase 4 EXTRA: Otro pequeño test.")

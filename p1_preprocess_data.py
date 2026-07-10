@@ -70,9 +70,11 @@ def preproc_data(es_target_size = None, root = r"Models Dev/RosaB/"):
             es_filtered = es_prefiltered
 
         es_size = save_to_file(es_filtered, root + r"wiki_es_clean")
+    else:
+        wiki_es_clean = load_from_disk(root + r"wiki_es_clean")
+        es_size = get_size(wiki_es_clean)
 
-
-    if not os.path.exists(root+r"wiki_es_clean"):
+    if not os.path.exists(root+r"wiki_en_clean"):
     #parte 2 (EN)
         wiki_en = load_from_disk(root + r"wiki_en")
         

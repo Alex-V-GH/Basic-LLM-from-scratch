@@ -22,7 +22,7 @@ def formatear(tag, pregunta, respuesta):
 
 
 def crear_dataset(root_dir):
-    output_path=root_dir + r"finetuning_dataset.txt"
+    output_path=root_dir + r"finetuning_conversations.txt"
     if not os.path.exists (output_path):
 
         preguntas = {
