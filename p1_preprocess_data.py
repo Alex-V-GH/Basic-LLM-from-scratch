@@ -14,7 +14,7 @@ import os
 def filter_a_b(min_length, data = "wiki_en"):
     filtered = data.filter(
         lambda x: len(x["text"]) >= min_length,#sólo dejo las líneas con más de "min_length" caracteres.
-        num_proc=4 #usa 4 procesos para mayopr velocidad
+        #num_proc=4 #usa 4 procesos para mayopr velocidad //tilda todo
     )
     filtered = filtered.remove_columns(["id", "url", "title"])#borro los campos que no me interesan.
     return filtered

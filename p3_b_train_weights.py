@@ -200,7 +200,8 @@ def make_loader(dataset, skip_batches=0):
     )
 
 
-def train(save_every : int, log_every : int, checkpoint_dir, token_bin, log_file, dataload, model_name, last_chkpt_file, last_chkpt_index,plot):
+def train(save_every : int, log_every : int, checkpoint_dir, token_bin, log_file,
+          dataload, model_name, last_chkpt_file, last_chkpt_index,plot,root_dir):
     last_chkpt_index = last_chkpt_index + save_every
     assert os.path.exists(token_bin), \
         f"No se encontró {token_bin} — corré primero 4a_tokenize_dataset.py"
@@ -314,13 +315,13 @@ def train_wrapper(root_dir,model_name,total_tokens = 77425724):
 
         if input("desea cargar los datos previos al gráfico?\n*LLEVA MUCHO TIEMPO CUANDO SON DEMASIADOS DATOS.\n*NO RECOMENDADO PARA STEP 80K+\ny/n") == "y":
             for step, loss in dataloader:
-                plot.update(step, loss)
+                plot.update(2,step, loss)
         
         multiprocessing.set_start_method("spawn", force=True)
-        train(save_every, log_every, checkpoint_dir, token_bin, log, dataloader, model_name,last_chkpt,last_chkpt_index,plot)
+        train(save_every, log_every, checkpoint_dir, token_bin, log, dataloader, model_name,last_chkpt,last_chkpt_index,plot, root_dir)
         plot.close()  # deja el gráfico visible al final
 
 if __name__ == "__main__":
-    root_dir = "Models Dev/Rosab/"
+    root_dir = "Models Dev/RosaC/"
     model_name = "Rosa"
     train_wrapper(root_dir,model_name)

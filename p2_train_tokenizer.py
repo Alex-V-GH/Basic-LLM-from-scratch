@@ -78,7 +78,7 @@ def train_tokenizer(dataset_es, dataset_en, output_path=r"Models Dev/RosaB/rosa_
     return tokenizer
 
 def train_tokenizer_root(root = r"Models Dev/RosaB/", model_name = r"Rosa"):
-    if not os.path.exists(root+model_name+"_tokenizer"):
+    if not os.path.exists(root+model_name+"_tokenizer.json"):
 
         print("Cargando datasets...")
         wiki_es = load_from_disk(root + r"wiki_es_clean")
