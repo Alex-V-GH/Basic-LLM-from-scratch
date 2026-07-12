@@ -55,10 +55,9 @@ def test_model(root_dir, model_name,pretrained = None, finetuned = None):
 
     while True:
         input_usuario = input("\nPrompt: ")
-        prompt = f"<bos>[usuario]: {input_usuario}<mask>"
-        #prompt = input_usuario
-        if prompt.lower() == "exit":
+        if input_usuario.lower() == "exit":
             break
+        prompt = f"<bos>[usuario]: {input_usuario}<mask>"
         output = generate(model, tokenizer, prompt, MAX_NEW_TOKENS, TEMPERATURE, TOP_K, device)
         print(f"\nRosa: {output}")
 
