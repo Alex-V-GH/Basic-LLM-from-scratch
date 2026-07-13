@@ -55,4 +55,4 @@ def procesar(root_dir):
 
 if __name__ == "__main__":
     root_dir = "Models Dev/Rosab/"
-    procesar(root_dir)
+    procesar(root_dir) #8625 pares

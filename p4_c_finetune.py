@@ -167,68 +167,74 @@ def finetune(root_dir, model_name, epochs, log_every):
     TOKEN_BIN       = root_dir + "Finetuning_tokens.bin"
     OUTPUT_PT       = root_dir + model_name + "_finetuned.pt"
     LOG_FILE        = root_dir + "finetuning_log.txt"
+    if not os.path.exists(OUTPUT_PT):
     # ─────────────────────────────────────────────────────────────────
-    device    = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    tokenizer = Tokenizer.from_file(TOKENIZER_PATH)
-    sep_id    = tokenizer.token_to_id(SEP)
+        device    = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        tokenizer = Tokenizer.from_file(TOKENIZER_PATH)
+        sep_id    = tokenizer.token_to_id(SEP)
 
-    print(f"Device: {device} | SEP token id: {sep_id}")
+        print(f"Device: {device} | SEP token id: {sep_id}")
 
-    dataset = FinetuningDataset(TOKEN_BIN, CONTEXT_LEN, sep_id)
-    loader  = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True, pin_memory=True)
+        dataset = FinetuningDataset(TOKEN_BIN, CONTEXT_LEN, sep_id)
+        loader  = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True, pin_memory=True)
 
-    model = NewbornModel().to(device)
+        model = NewbornModel().to(device)
 
-    # cargar checkpoint
-    print(f"Cargando checkpoint: {CHECKPOINT_PATH}")
-    ckpt = torch.load(CHECKPOINT_PATH, map_location=device)
-    model.load_state_dict(ckpt["model"])
-    print(f"Parámetros: {model.count_params():,}")
+        # cargar checkpoint
+        print(f"Cargando checkpoint: {CHECKPOINT_PATH}")
+        ckpt = torch.load(CHECKPOINT_PATH, map_location=device)
+        model.load_state_dict(ckpt["model"])
+        print(f"Parámetros: {model.count_params():,}")
 
-    optimizer = torch.optim.AdamW(model.parameters(), lr=LR, weight_decay=0.1)
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-        optimizer, T_max=len(loader) * epochs, eta_min=1e-6
-    )
-    scaler = torch.cuda.amp.GradScaler()
+        optimizer = torch.optim.AdamW(model.parameters(), lr=LR, weight_decay=0.1)
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            optimizer, T_max=len(loader) * epochs, eta_min=1e-6
+        )
+        scaler = torch.cuda.amp.GradScaler()
 
-    log_lines = []
+        log_lines = []
 
-    for epoch in range(epochs):
-        model.train()
-        for step, (x, y, mask) in enumerate(loader):
-            x, y, mask = x.to(device), y.to(device), mask.to(device)
+        for epoch in range(epochs):
+            model.train()
+            for step, (x, y, mask) in enumerate(loader):
+                x, y, mask = x.to(device), y.to(device), mask.to(device)
 
-            with torch.cuda.amp.autocast():
-                logits = model(x)
-                loss_resp, loss_input, loss_avg = calc_loss(logits, y, mask, VOCAB_SIZE)
-                loss = loss_resp  # entrenamos sobre respuesta
+                with torch.cuda.amp.autocast():
+                    logits = model(x)
+                    loss_resp, loss_input, loss_avg = calc_loss(logits, y, mask, VOCAB_SIZE)
+                    loss = loss_resp  # entrenamos sobre respuesta
 
-            scaler.scale(loss).backward()
-            scaler.unscale_(optimizer)
-            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-            scaler.step(optimizer)
-            scaler.update()
-            optimizer.zero_grad()
-            scheduler.step()
+                scaler.scale(loss).backward()
+                scaler.unscale_(optimizer)
+                torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+                scaler.step(optimizer)
+                scaler.update()
+                optimizer.zero_grad()
+                scheduler.step()
 
-            if (step + 1) % log_every == 0:
-                lr_actual = scheduler.get_last_lr()[0]
-                log = (
-                    f"epoch {epoch+1:02d} | step {step+1:04d} "
-                    f"| LOSS_RESP {loss_resp.item():.4f} "
-                    f"| loss_input {loss_input.item():.4f} "
-                    f"| loss_avg {loss_avg.item():.4f} "
-                    f"| lr {lr_actual:.2e}"
-                )
-                print(log)
-                log_lines.append(log)
+                if (step + 1) % log_every == 0:
+                    lr_actual = scheduler.get_last_lr()[0]
+                    log = (
+                        f"epoch {epoch+1:02d} | step {step+1:04d} "
+                        f"| LOSS_RESP {loss_resp.item():.4f} "
+                        f"| loss_input {loss_input.item():.4f} "
+                        f"| loss_avg {loss_avg.item():.4f} "
+                        f"| lr {lr_actual:.2e}"
+                    )
+                    print(log)
+                    log_lines.append(log)
 
-    torch.save(model.state_dict(), OUTPUT_PT)
-    print(f"\nModelo guardado: {OUTPUT_PT}")
+        torch.save({"step":      step,
+                    "model":     model.state_dict(),
+                    "optimizer": optimizer.state_dict(),
+                    "scheduler": scheduler.state_dict(),
+                    "scaler":    scaler.state_dict(),
+                    },OUTPUT_PT)
+        print(f"\nModelo guardado: {OUTPUT_PT}")
 
-    with open(LOG_FILE, "w", encoding="utf-8") as f:
-        f.write("\n".join(log_lines))
-    print(f"Log guardado: {LOG_FILE}")
+        with open(LOG_FILE, "w", encoding="utf-8") as f:
+            f.write("\n".join(log_lines))
+        print(f"Log guardado: {LOG_FILE}")
 
 
 if __name__ == "__main__":

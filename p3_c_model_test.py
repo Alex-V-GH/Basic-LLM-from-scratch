@@ -14,6 +14,7 @@ TOP_K          = 50
 def generate(model, tokenizer, prompt, max_new_tokens, temperature, top_k, device):
     model.eval()
     ids = tokenizer.encode(prompt).ids
+    eos_id = tokenizer.token_to_id("<eos>")
     x   = torch.tensor([ids], dtype=torch.long).to(device)
 
     with torch.no_grad():
@@ -29,7 +30,9 @@ def generate(model, tokenizer, prompt, max_new_tokens, temperature, top_k, devic
 
             probs   = torch.softmax(logits, dim=-1)
             next_id = torch.multinomial(probs, num_samples=1)
-            x       = torch.cat([x, next_id], dim=1)
+            if next_id.item() == eos_id:
+                break
+            x = torch.cat([x, next_id], dim=1)
 
     generated = x[0, len(ids):].tolist()
     return tokenizer.decode(generated)
