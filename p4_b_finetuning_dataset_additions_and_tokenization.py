@@ -23,7 +23,7 @@ def formatear(tag, pregunta, respuesta):
 
 def crear_dataset(root_dir):
     output_path=root_dir + r"finetuning_conversations.txt"
-    if not os.path.exists (output_path):
+    if True:# not os.path.exists (output_path):
 
         preguntas = {
             "¿Cuánto es 2 más 2?":              "2 más 2 es 4.",

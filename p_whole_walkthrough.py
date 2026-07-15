@@ -70,7 +70,7 @@ if __name__ == "__main__":
 
     titulo("Fase 4 B1: Creación de pares personalizados para el dataset de finetuning.")
     crear_dataset(root_dir)
-    #result: root_dir + r"finetuning_dataset.txt"
+    #result: root_dir + r"finetuning_conversations.txt" (RE)
     titulo("Fase 4 B2: Tokenización del dataset para finetunning.")
     tokenizar_dataset(root_dir, model_name)
     #result: root_dir + r"Finetuning_tokens.bin"
