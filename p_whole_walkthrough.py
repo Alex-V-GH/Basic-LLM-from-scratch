@@ -15,8 +15,8 @@ def titulo(titul):
     f"                    {titul}\n",
     "===========================================================\n===========================================================\n",)
 if __name__ == "__main__":
-    root_dir = input("Pegue el directorio raiz de su proyecto de modelo:\n") + "/"
-    model_name = input("Cómo va a nombrar a su modelo?\n")
+    root_dir = r"C:\Users\Alex\Desktop\Violetta AI\Models Dev\RosaC/" #input("Pegue el directorio raiz de su proyecto de modelo:\n") + "/"
+    model_name = "Rosa"#input("Cómo va a nombrar a su modelo?\n")
 
     #if os.path.exists(token_bin)
 
@@ -48,7 +48,7 @@ if __name__ == "__main__":
     #Result:    root_dir + model_name + "_pretrained.pt"
 
     titulo("Fase 3 C: Un pequeño test.")
-    test_model(root_dir, model_name, pretrained = 1, finetuned = None)
+    #test_model(root_dir, model_name, pretrained = 1, finetuned = None)
     #Result: None
 
 
