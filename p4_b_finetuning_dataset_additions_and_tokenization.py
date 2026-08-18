@@ -22,8 +22,8 @@ def formatear(tag, pregunta, respuesta):
 
 
 def crear_dataset(root_dir):
-    output_path=root_dir + r"finetuning_conversations.txt"
-    if True:# not os.path.exists (output_path):
+    output_path=root_dir + r"/ft datas/finetuning_conversations.txt"
+    if not os.path.exists (output_path):
 
         preguntas = {
             "¿Cuánto es 2 más 2?":              "2 más 2 es 4.",
@@ -109,19 +109,28 @@ def crear_dataset(root_dir):
         print(f"Total ejemplos agregados: {len(ejemplos)}")
 
 
+
 def tokenizar_dataset(root_dir, model_name):
-    input_path     = root_dir + r"finetuning_conversations.txt"
-    output_bin     = root_dir + r"Finetuning_tokens.bin"
+    output_bin     = root_dir + model_name + r"_Finetuning_tokens.bin"
     tokenizer_path = root_dir + model_name + r"_tokenizer.json"
+    ft_data_folder = root_dir + r"ft datas/"
 
     if not os.path.exists(output_bin):
-
-        DTYPE = np.uint16
+        DTYPE     = np.uint16
         tokenizer = Tokenizer.from_file(tokenizer_path)
 
-        with open(input_path, "r", encoding="utf-8") as f:
-            ejemplos = [line.strip() for line in f.readlines() if line.strip()]
+        # recolectar todos los .txt en ft datas/ y subcarpetas
+        ejemplos = []
+        for dirpath, _, filenames in os.walk(ft_data_folder):
+            for filename in filenames:
+                if filename.endswith(".txt"):
+                    filepath = os.path.join(dirpath, filename)
+                    with open(filepath, "r", encoding="utf-8") as f:
+                        lineas = [line.strip() for line in f.readlines() if line.strip()]
+                    ejemplos.extend(lineas)
+                    print(f"Leído: {filepath} — {len(lineas)} ejemplos")
 
+        print(f"Total ejemplos antes de shuffle: {len(ejemplos):,}")
         random.shuffle(ejemplos)
 
         buf = []
@@ -131,10 +140,13 @@ def tokenizar_dataset(root_dir, model_name):
 
         arr = np.array(buf, dtype=DTYPE)
         with open(output_bin, "wb") as f:
+            print ("esta en el with open")
             f.write(arr.tobytes())
 
         print(f"Listo: {output_bin}")
         print(f"Total tokens: {len(arr):,}")
+    return 25215157 # arreglar
+
 
 if __name__ == "__main__":
     root_dir = "Models Dev/Rosab/"

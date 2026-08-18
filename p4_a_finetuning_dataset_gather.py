@@ -14,23 +14,24 @@ def procesar(root_dir):
     output_folder = root_dir + r"ft datas/"
     os.makedirs(output_folder, exist_ok=True)
     output_path = output_folder + r"everyday_conversations_llama.txt"
+    print(output_path)
     ejemplos = []
     contador_a = 0
     contador_b = 0
     contador_c = 0
-    # ── Dataset 1: everyday-conversations (~8625 pares) ──────────────
+
+
+    model_name = "Helsinki-NLP/opus-mt-en-es"
+    tokenizer  = MarianTokenizer.from_pretrained(model_name)
+    model      = MarianMTModel.from_pretrained(model_name)
+
+    def traducir(textos: list[str]) -> list[str]:
+        batch = tokenizer(textos, return_tensors="pt", padding=True, truncation=True, max_length=512)
+        translated = model.generate(**batch)
+        return tokenizer.batch_decode(translated, skip_special_tokens=True)
+
+    # ── Dataset 1: everyday-conversations (~8625 pares) ────────────── (unos minutitos)
     if not os.path.exists(output_path):
-
-        model_name = "Helsinki-NLP/opus-mt-en-es"
-        tokenizer  = MarianTokenizer.from_pretrained(model_name)
-        model      = MarianMTModel.from_pretrained(model_name)
-
-        def traducir(textos: list[str]) -> list[str]:
-            batch = tokenizer(textos, return_tensors="pt", padding=True, truncation=True, max_length=512)
-            translated = model.generate(**batch)
-            return tokenizer.batch_decode(translated, skip_special_tokens=True)
-
-
         print("=== Procesando everyday-conversations ===")
         ds_everyday = load_dataset("HuggingFaceTB/everyday-conversations-llama3.1-2k", split="train_sft")
 
@@ -57,7 +58,7 @@ def procesar(root_dir):
         guardar(output_path, ejemplos)
 
 
-    # ── Dataset 2: dolly ES (~15015 pares) ───────────────────────────
+    # ── Dataset 2: dolly ES (~15015 pares) ─────────────────────────── (unos segundos)
     output_path = output_folder + r"databricks_dolly_es.txt"
     ejemplos = []#wipe var
     if not os.path.exists(output_path):
@@ -72,9 +73,10 @@ def procesar(root_dir):
                 contador_b += 1
             if i % 1000 == 0:
                 print(f"Dolly ES: {i}/{len(ds_dolly_es)}")
+        guardar(output_path, ejemplos)
 
 
-        # ── Dataset 3: dolly EN traducido (~15015 pares) ─────────────────
+        # ── Dataset 3: dolly EN traducido (~15015 pares) ─────────────────(20 hs aprox.)
     output_path = output_folder + r"databricks_dolly_en.txt"
     ejemplos = []#wipe var
     if not os.path.exists(output_path):
@@ -93,19 +95,23 @@ def procesar(root_dir):
             contador_b += 1
             if i % 100 == 0:
                 print(f"Dolly EN→ES: {i}/{len(ds_dolly_en)} | Total pares: {contador_b}")
+        guardar(output_path, ejemplos)
 
-
-        # ── Dataset 4: OASST2 ES + EN traducido ──────────────────────────
+    # ── Dataset 4: OASST2 ES + EN traducido (~??? pares. aprox. 1h20' per block (769 pares) aprox 7 segs per par)──────────────────────────
+    #14 k ejemplos??? CORROBORAR!
     output_folder_oasst = output_folder + r"oasst2/" #la uso como base para este caso
+    os.makedirs(output_folder_oasst, exist_ok=True)# me aseguro de que exista
     try:
         parsed = max(
             int(os.path.splitext(f)[0])
-            for f in os.listdir(output_path)
-            if os.path.isfile(os.path.join(output_path, f))
+            for f in os.listdir(output_folder_oasst)
+            if os.path.isfile(os.path.join(output_folder_oasst, f))
         )
         print(f"se encontro un total de {parsed} pares parseados")
+        parsed += 1
     except:
         parsed = 0
+        print("parsed es 0")
     output_path = output_folder_oasst + str(parsed) + ".txt"
     ds_oasst2 = load_dataset("OpenAssistant/oasst2", split="train")
     oasst_length=len(ds_oasst2)
@@ -120,7 +126,7 @@ def procesar(root_dir):
         contador = 0
         contador2 = 0
         for msg in ds_oasst2:
-            if contador + contador2 >= parsed:
+            if contador + contador2 >= parsed-1:
             # solo mensajes de asistente, no borrados, con review positivo
                 if msg["role"] != "assistant":
                     contador2 += 1
@@ -161,19 +167,33 @@ def procesar(root_dir):
 
                 ejemplos.append(f"<bos><user>: {pregunta}<mask><pregunta><rosa>: {respuesta}<eos>")
                 if (contador + 1) % 50 == 0:
-                    print(f"OASST2: {contador2} pares procesados, {contador} pares parseados")
-                if (contador + contador2) % buffer_len == 0:
-                    output_path = output_folder_oasst + str(contador + contador2) + ".txt"#actualiz. path
+                    print(f"OASST2: {contador2} pares procesados, {contador} pares parseados. Total de {contador + contador2}")
+                if (contador + contador2 + 1) % buffer_len == 0:
+                    output_path = output_folder_oasst + str(contador + contador2 + 1) + ".txt"#actualiz. path
                     guardar(output_path,ejemplos)
                     ejemplos = []#reset buffer
                 contador += 1
-    guardar(output_folder_oasst + str(contador + contador2), ejemplos)
-    print(f"OASST2: {contador2} pares procesados, {contador} pares parseados\nFIN.")
+            else:
+                contador2 +=1
+    try:
+        guardar(output_folder_oasst + str(contador + contador2), ejemplos)
+    except Exception as e:
+        print(e)
+        pass
+    try:
+        print(f"OASST2: {contador2} pares procesados, {contador} pares parseados. Total de {contador + contador2}\nFIN.")
+    except Exception as e:
+        print (e)
 
 
 
 
 
 if __name__ == "__main__":
-    root_dir = "Models Dev/Rosab/"
+    root_dir = "Models Dev/Rosac/"
     procesar(root_dir)
+
+
+
+    #IMPORTANTE"""!!!!!!!!!!!!!!!!!!!!!!!!!
+    #SUMAR AL CONTADOR <<<<ANTES>>>>
